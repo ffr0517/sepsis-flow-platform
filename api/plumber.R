@@ -14,7 +14,7 @@ if (!file.exists(model_path)) {
 
 bundle_day1 <- readRDS(model_path)
 
-source(file.path(api_dir, "R", "predict.R"))
+source(file.path(api_dir, "R", "predict.r"))
 
 as_df_payload <- function(x) {
   if (is.data.frame(x)) {
