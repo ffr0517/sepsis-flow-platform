@@ -7,3 +7,5 @@ node_modules
 .Rproj.user
 .Rhistory
 .RData
+api/Dockerfile
+api/plumber.R
