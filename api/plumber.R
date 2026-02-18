@@ -75,6 +75,14 @@ required_input_fields <- c(
   "not.alert", "hr.all", "rr.all", "envhtemp", "crt.long", "oxy.ra"
 )
 
+level_labels <- c(
+  L1 = "Mechanical ventilation, inotropes, or renal replacement therapy",
+  L2 = "CPAP or IV fluid bolus",
+  L3 = "ICU admission with clinical reason",
+  L4 = "O2 via face or nasal cannula",
+  L5 = "Non-bolused IV fluids"
+)
+
 predict_ensemble_summary <- function(new_data, ensemble_bundle, vote_threshold = 0.5) {
   pmat <- predict_ensemble_all_heads(new_data, ensemble_bundle)
 
@@ -83,13 +91,14 @@ predict_ensemble_summary <- function(new_data, ensemble_bundle, vote_threshold =
   n_heads <- rowSums(!is.na(pmat))
   vote_frac <- ifelse(n_heads > 0, n_votes / n_heads, NA_real_)
   ensemble_yes <- n_votes > (n_heads / 2)
+  pct_heads_used <- (n_heads / 120) * 100
 
   data.frame(
-    mean_prob = mean_prob,
-    n_votes_gt = n_votes,
-    n_heads = n_heads,
-    vote_frac_gt = vote_frac,
-    ensemble_yes = ensemble_yes,
+    mean_predicted_probability = mean_prob,
+    votes_exceeding_threshold = n_votes,
+    pct_heads_used = pct_heads_used,
+    votes_above_threshold = vote_frac,
+    predicted_treatment_by_majority_vote = ensemble_yes,
     stringsAsFactors = FALSE
   )
 }
@@ -102,8 +111,8 @@ predict_day1_long <- function(new_data, bundle_day1, levels = NULL, vote_thresho
   res <- lapply(lvls, function(lvl) {
     ens <- bundle_day1$levels[[lvl]]
     df <- predict_ensemble_summary(new_data, ens, vote_threshold = vt)
-    df$level <- lvl
-    df
+    df$level <- unname(level_labels[[lvl]] %||% lvl)
+    df[, c("level", setdiff(names(df), "level")), drop = FALSE]
   })
 
   out <- do.call(rbind, res)
