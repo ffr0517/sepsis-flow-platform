@@ -83,16 +83,15 @@ extract_preprocess_constants_type2 <- function(head_path) {
 
     medians <- rec$steps[[1]]$medians
 
-    # Type 2 has step_normalize at the end (you saw it as step 13)
     step_norm <- rec$steps[[length(rec$steps)]]
     means <- step_norm$means
     sds <- step_norm$sds
 
-    # Model feature names (truth source for what we must create)
+    # Model feature names
     model_min <- strip_model_type1_glmnetpredict(head_path)
     features <- model_min$features
 
-    # Pull all step_ns blocks (by class)
+
     ns_steps <- Filter(function(st) inherits(st, "step_ns"), rec$steps)
     if (length(ns_steps) == 0) stop("No step_ns found in recipe; not Type 2?")
 
@@ -452,8 +451,7 @@ extract_preprocess_constants_type3 <- function(head_path) {
 strip_model_type3_rpart <- function(head_path) {
     head <- readRDS(head_path)
 
-    # decision_tree() -> rpart engine by default here
-    # keep only what we need for prediction: the fitted rpart object
+
     rpart_fit <- head$model$fit$fit$fit
     if (!inherits(rpart_fit, "rpart")) {
         stop("Expected an rpart fit, got: ", paste(class(rpart_fit), collapse = ", "))
@@ -514,8 +512,6 @@ manual_type3_matrix <- function(new_data, preprocess) {
 predict_type3_manual <- function(new_data, preprocess, model_minimal) {
     Xdf <- manual_type3_matrix(new_data, preprocess)
 
-    # IMPORTANT: rpart uses variable names in the tree; it expects a data.frame
-    # with those exact columns.
     p <- stats::predict(model_minimal$fit, newdata = Xdf, type = "prob")
     if (!is.matrix(p) || !"yes" %in% colnames(p)) {
         stop("Unexpected rpart probability output; expected a matrix with column 'yes'.")
