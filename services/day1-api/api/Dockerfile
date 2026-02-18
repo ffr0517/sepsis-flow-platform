@@ -16,9 +16,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN R -q -e "install.packages(c('plumber','jsonlite'), repos='https://cloud.r-project.org', Ncpus=parallel::detectCores()); stopifnot(requireNamespace('plumber', quietly=TRUE), requireNamespace('jsonlite', quietly=TRUE))"
 
 WORKDIR /app
-COPY api/plumber.R /app/plumber.R
-COPY api/R /app/R
-COPY api/models /app/models
+# Render commonly builds from repository root (/opt/render/project/src),
+# so source paths are anchored from that context.
+COPY services/day1-api/api/plumber.R /app/plumber.R
+COPY services/day1-api/api/R /app/R
+COPY services/day1-api/api/models /app/models
 
 EXPOSE 8000
 
