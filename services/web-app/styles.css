@@ -149,6 +149,18 @@ code {
   color: #157a3e;
 }
 
+.chip-warn {
+  background: #fff4df;
+  border-color: #f0d39f;
+  color: #8a5a11;
+}
+
+.chip-error {
+  background: #fdeaea;
+  border-color: #efc8c8;
+  color: #8a1f1f;
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;
@@ -183,6 +195,11 @@ code {
 
 .hidden {
   display: none;
+}
+
+.card.locked {
+  opacity: 0.55;
+  filter: grayscale(0.15);
 }
 
 table {

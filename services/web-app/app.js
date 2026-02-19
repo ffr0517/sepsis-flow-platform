@@ -27,6 +27,8 @@ const state = {
   day2Prefill: null,
   day1Response: null,
   day2Response: null,
+  startupReady: false,
+  startupWarming: false,
   loading: {
     day1: false,
     day2: false
@@ -80,8 +82,26 @@ function setLoading(phase, isLoading) {
   }
 
   if (state.loading.day1 || state.loading.day2) {
-    setStatus("loading", "Loading: running prediction request. Free-tier warm-up can take up to ~2 minutes.");
+    setStatus("loading", "Loading: running prediction request. Please wait.");
   }
+}
+
+function setWarmupUi({ text, chipLabel, chipClass }) {
+  const warmupText = byId("warmupText");
+  const warmupChip = byId("warmupChip");
+  warmupText.textContent = text;
+  warmupChip.textContent = chipLabel;
+  warmupChip.className = `chip ${chipClass}`.trim();
+}
+
+function setInteractionLocked(locked) {
+  const gateableCards = document.querySelectorAll(".gateable");
+  gateableCards.forEach((card) => {
+    card.classList.toggle("locked", locked);
+    card.querySelectorAll("input, button, select, textarea").forEach((el) => {
+      el.disabled = locked;
+    });
+  });
 }
 
 function readNumberInput(id) {
@@ -248,6 +268,7 @@ function downloadCsv(filename, csvText) {
 
 async function handleRunDay1() {
   try {
+    if (!state.startupReady) throw new Error("Startup check is still running. Wait for APIs to be ready.");
     setLoading("day1", true);
     const baselineInputs = collectBaselineInputs();
     const envelope = await postJson(`${ORCHESTRATOR_API_BASE_URL}/flow/day1?format=long`, { data: baselineInputs });
@@ -272,6 +293,7 @@ async function handleRunDay1() {
 
 async function handleRunDay2() {
   try {
+    if (!state.startupReady) throw new Error("Startup check is still running. Wait for APIs to be ready.");
     setLoading("day2", true);
     if (!state.baselineInputs) throw new Error("Run Day 1 first to generate baseline and Day 2 prefill.");
     const day2Prefill = collectDay2Prefill();
@@ -295,6 +317,10 @@ async function handleRunDay2() {
 }
 
 function handleExport() {
+  if (!state.startupReady) {
+    setStatus("error", "Failed: startup check has not completed yet.");
+    return;
+  }
   if (!state.day1Response || !state.day2Response) {
     setStatus("error", "Failed: run both Day 1 and Day 2 predictions before exporting CSV.");
     return;
@@ -302,6 +328,44 @@ function handleExport() {
   const csvText = buildCsvRows();
   downloadCsv("sepsis-flow-two-day-results.csv", csvText);
   setStatus("success", "Success: CSV export downloaded.");
+}
+
+async function runStartupWarmup() {
+  if (state.startupWarming) return;
+  state.startupWarming = true;
+  state.startupReady = false;
+  setInteractionLocked(true);
+  byId("retryWarmupBtn").disabled = true;
+  setStatus("loading", "Loading: waking up Day 1 and Day 2 APIs before enabling the form.");
+  setWarmupUi({
+    text: "Checking Day 1 and Day 2 APIs. This can take up to a few minutes on free-tier cold start.",
+    chipLabel: "Warming Up",
+    chipClass: "chip-warn"
+  });
+
+  try {
+    await postJson(`${ORCHESTRATOR_API_BASE_URL}/warmup`, {});
+    state.startupReady = true;
+    setInteractionLocked(false);
+    setStatus("neutral", "Ready to run Day 1 prediction.");
+    setWarmupUi({
+      text: "Startup check complete. Day 1 and Day 2 APIs are ready.",
+      chipLabel: "Ready",
+      chipClass: "chip-ok"
+    });
+  } catch (err) {
+    state.startupReady = false;
+    setInteractionLocked(true);
+    setStatus("error", `Failed: ${err.message}`);
+    setWarmupUi({
+      text: `Startup check failed: ${err.message}`,
+      chipLabel: "Failed",
+      chipClass: "chip-error"
+    });
+  } finally {
+    state.startupWarming = false;
+    byId("retryWarmupBtn").disabled = false;
+  }
 }
 
 function init() {
@@ -322,7 +386,8 @@ function init() {
   byId("runDay1Btn").addEventListener("click", handleRunDay1);
   byId("runDay2Btn").addEventListener("click", handleRunDay2);
   byId("exportBtn").addEventListener("click", handleExport);
-  setStatus("neutral", "Ready to run Day 1 prediction.");
+  byId("retryWarmupBtn").addEventListener("click", runStartupWarmup);
+  runStartupWarmup();
 }
 
 init();

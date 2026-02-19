@@ -101,6 +101,44 @@ function() {
   )
 }
 
+#* Warm up downstream APIs and wait until both are ready
+#* @post /warmup
+#* @serializer json list(auto_unbox = TRUE, digits = 10)
+function(res) {
+  started <- Sys.time()
+  trace <- new_trace("/warmup")
+
+  day1 <- wait_for_downstream_ready(
+    base_url = day1_api_base_url,
+    timeout_sec = warmup_timeout_seconds,
+    poll_every_sec = warmup_poll_seconds,
+    per_request_timeout_sec = warmup_request_timeout_seconds
+  )
+
+  day2 <- wait_for_downstream_ready(
+    base_url = day2_api_base_url,
+    timeout_sec = warmup_timeout_seconds,
+    poll_every_sec = warmup_poll_seconds,
+    per_request_timeout_sec = warmup_request_timeout_seconds
+  )
+
+  if (!isTRUE(day1$ok) || !isTRUE(day2$ok)) {
+    res$status <- 502
+    return(envelope_error(
+      message = "One or more downstream APIs did not become ready within warm-up timeout.",
+      code = "DOWNSTREAM_WARMUP_TIMEOUT",
+      details = list(day1 = day1, day2 = day2),
+      trace = finalize_trace(trace, started)
+    ))
+  }
+
+  envelope_ok(
+    data = list(day1 = day1, day2 = day2),
+    warnings = list(),
+    trace = finalize_trace(trace, started)
+  )
+}
+
 #* Run Day 1 and return Day 2 prefill derived from Day 1 outputs
 #* @post /flow/day1
 #* @param format:string Optional. "long" or "wide" (default "long")

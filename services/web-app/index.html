@@ -26,7 +26,18 @@
       <p id="statusText" class="status-text">Ready to run Day 1 prediction.</p>
     </section>
 
-    <section class="card">
+    <section id="warmupCard" class="card">
+      <div class="section-header">
+        <h2>Startup Check</h2>
+        <span id="warmupChip" class="chip">Pending</span>
+      </div>
+      <p id="warmupText" class="hint">Checking Day 1 and Day 2 APIs. Inputs stay locked until both are ready.</p>
+      <div class="actions">
+        <button id="retryWarmupBtn" class="btn" type="button">Retry Startup Check</button>
+      </div>
+    </section>
+
+    <section id="day1InputCard" class="card gateable">
       <div class="section-header">
         <h2>Baseline Presenting Clinical Features (Day 0)</h2>
         <span class="chip">Required Fields</span>
@@ -37,7 +48,7 @@
       </div>
     </section>
 
-    <section id="day1ResultsCard" class="card hidden">
+    <section id="day1ResultsCard" class="card gateable hidden">
       <div class="section-header">
         <h2>Day 1 Treatment Predictions</h2>
         <span class="chip chip-ok">Complete</span>
@@ -45,7 +56,7 @@
       <div id="day1Results"></div>
     </section>
 
-    <section id="day2EditCard" class="card hidden">
+    <section id="day2EditCard" class="card gateable hidden">
       <div class="section-header">
         <h2>Prefilled Predicted Day 1 Treatments for Day 2 Prediction</h2>
         <span class="chip">Review & Adjust</span>
@@ -56,7 +67,7 @@
       </div>
     </section>
 
-    <section id="day2ResultsCard" class="card hidden">
+    <section id="day2ResultsCard" class="card gateable hidden">
       <div class="section-header">
         <h2>Day 2 Treatment Predictions</h2>
         <span class="chip chip-ok">Complete</span>
@@ -64,7 +75,7 @@
       <div id="day2Results"></div>
     </section>
 
-    <section id="exportCard" class="card hidden">
+    <section id="exportCard" class="card gateable hidden">
       <div class="section-header">
         <h2>Export</h2>
       </div>

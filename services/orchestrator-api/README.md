@@ -31,6 +31,10 @@ It returns a consistent response envelope:
 - `GET /health`
   - Returns orchestrator status and downstream Day 1/Day 2 health checks.
 
+- `POST /warmup`
+  - Actively waits for Day 1 and Day 2 APIs to become ready.
+  - Returns `502` with details if either downstream API does not become ready within warm-up timeout.
+
 - `POST /flow/day1`
   - Accepts Day 1 baseline fields.
   - Returns `day1_result`, `day2_prefill`, and echoed `baseline_inputs`.
