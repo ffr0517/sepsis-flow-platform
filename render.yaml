@@ -15,6 +15,8 @@ services:
         value: 90
       - key: WARMUP_POLL_SECONDS
         value: 3
+      - key: WARMUP_REQUEST_TIMEOUT_SECONDS
+        value: 60
       - key: DOWNSTREAM_RETRY_ATTEMPTS
         value: 3
       - key: DOWNSTREAM_RETRY_DELAY_SECONDS

@@ -33,6 +33,14 @@ day2_api_base_url <- Sys.getenv("DAY2_API_BASE_URL", unset = "https://sepsis-flo
 request_timeout_seconds <- as.numeric(Sys.getenv("REQUEST_TIMEOUT_SECONDS", unset = "20"))
 warmup_timeout_seconds <- as.numeric(Sys.getenv("WARMUP_TIMEOUT_SECONDS", unset = "90"))
 warmup_poll_seconds <- as.numeric(Sys.getenv("WARMUP_POLL_SECONDS", unset = "3"))
+warmup_request_timeout_seconds <- as.numeric(Sys.getenv(
+  "WARMUP_REQUEST_TIMEOUT_SECONDS",
+  unset = as.character(min(warmup_timeout_seconds, max(30, request_timeout_seconds)))
+))
+if (!is.finite(warmup_request_timeout_seconds) || warmup_request_timeout_seconds <= 0) {
+  warmup_request_timeout_seconds <- min(warmup_timeout_seconds, max(30, request_timeout_seconds))
+}
+warmup_request_timeout_seconds <- min(warmup_request_timeout_seconds, warmup_timeout_seconds)
 downstream_retry_attempts <- as.integer(Sys.getenv("DOWNSTREAM_RETRY_ATTEMPTS", unset = "3"))
 downstream_retry_delay_seconds <- as.numeric(Sys.getenv("DOWNSTREAM_RETRY_DELAY_SECONDS", unset = "2"))
 cors_allow_origins <- trimws(strsplit(Sys.getenv("CORS_ALLOW_ORIGINS", unset = "*"), ",")[[1]])
@@ -85,6 +93,7 @@ function() {
       request_timeout_seconds = request_timeout_seconds,
       warmup_timeout_seconds = warmup_timeout_seconds,
       warmup_poll_seconds = warmup_poll_seconds,
+      warmup_request_timeout_seconds = warmup_request_timeout_seconds,
       downstream_retry_attempts = downstream_retry_attempts,
       downstream_retry_delay_seconds = downstream_retry_delay_seconds
     ),
@@ -137,7 +146,7 @@ function(req, res, format = "long", vote_threshold = NULL) {
     base_url = day1_api_base_url,
     timeout_sec = warmup_timeout_seconds,
     poll_every_sec = warmup_poll_seconds,
-    per_request_timeout_sec = min(10, request_timeout_seconds)
+    per_request_timeout_sec = warmup_request_timeout_seconds
   )
   if (!isTRUE(day1_warm$ok)) {
     res$status <- 502
@@ -262,7 +271,7 @@ function(req, res, format = "long", vote_threshold = NULL) {
     base_url = day2_api_base_url,
     timeout_sec = warmup_timeout_seconds,
     poll_every_sec = warmup_poll_seconds,
-    per_request_timeout_sec = min(10, request_timeout_seconds)
+    per_request_timeout_sec = warmup_request_timeout_seconds
   )
   if (!isTRUE(day2_warm$ok)) {
     res$status <- 502

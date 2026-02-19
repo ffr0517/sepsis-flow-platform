@@ -20,6 +20,7 @@ It returns a consistent response envelope:
 - `REQUEST_TIMEOUT_SECONDS` (default: `20`)
 - `WARMUP_TIMEOUT_SECONDS` (default: `90`)
 - `WARMUP_POLL_SECONDS` (default: `3`)
+- `WARMUP_REQUEST_TIMEOUT_SECONDS` (default: `min(WARMUP_TIMEOUT_SECONDS, max(30, REQUEST_TIMEOUT_SECONDS))`)
 - `DOWNSTREAM_RETRY_ATTEMPTS` (default: `3`)
 - `DOWNSTREAM_RETRY_DELAY_SECONDS` (default: `2`)
 - `CORS_ALLOW_ORIGINS` (default: `*`)
