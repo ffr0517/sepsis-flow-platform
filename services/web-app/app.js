@@ -2,15 +2,47 @@ const ORCHESTRATOR_API_BASE_URL = "https://sepsis-flow-orchestrator.onrender.com
 
 const BASELINE_FIELDS = [
   { key: "age.months", label: "Age (months)", type: "number", step: "1" },
-  { key: "sex", label: "Sex (1=male, 0=female)", type: "number", step: "1", min: "0", max: "1" },
-  { key: "adm.recent", label: "Recent Admission (1/0)", type: "number", step: "1", min: "0", max: "1" },
+  {
+    key: "sex",
+    label: "Sex",
+    type: "binary-radio",
+    options: [
+      { label: "Male", value: 1 },
+      { label: "Female", value: 0 }
+    ]
+  },
+  {
+    key: "adm.recent",
+    label: "Recent admission (overnight hospitalisation within last 6 months)",
+    type: "binary-radio",
+    options: [
+      { label: "Yes", value: 1 },
+      { label: "No", value: 0 }
+    ]
+  },
   { key: "wfaz", label: "WFA Z-Score", type: "number", step: "0.01" },
   { key: "cidysymp", label: "Illness Duration (days)", type: "number", step: "1" },
-  { key: "not.alert", label: "Not Alert (1/0)", type: "number", step: "1", min: "0", max: "1" },
+  {
+    key: "not.alert",
+    label: "Not alert (AVPU < A)",
+    type: "binary-radio",
+    options: [
+      { label: "Yes", value: 1 },
+      { label: "No", value: 0 }
+    ]
+  },
   { key: "hr.all", label: "Heart Rate", type: "number", step: "0.1" },
   { key: "rr.all", label: "Respiratory Rate", type: "number", step: "0.1" },
   { key: "envhtemp", label: "Temperature (C)", type: "number", step: "0.1" },
-  { key: "crt.long", label: "CRT >2s (1/0)", type: "number", step: "1", min: "0", max: "1" },
+  {
+    key: "crt.long",
+    label: "Capillary refill time > 2 seconds",
+    type: "binary-radio",
+    options: [
+      { label: "Yes", value: 1 },
+      { label: "No", value: 0 }
+    ]
+  },
   { key: "oxy.ra", label: "SpO2 (%)", type: "number", step: "0.1" }
 ];
 
@@ -37,7 +69,35 @@ const state = {
 
 const byId = (id) => document.getElementById(id);
 
-function makeFieldHtml({ key, label, type = "number", step = "any", min, max }, value = "") {
+function makeFieldHtml({ key, label, type = "number", step = "any", min, max, options = [] }, value = "") {
+  if (type === "binary-radio") {
+    const selected = Number(value);
+    const radioOptions = options.length > 0 ? options : [{ label: "Yes", value: 1 }, { label: "No", value: 0 }];
+    const radiosHtml = radioOptions
+      .map((opt, idx) => {
+        const optionValue = Number(opt.value);
+        const optionId = `${key}-${optionValue}`;
+        const isChecked = selected === optionValue ? "checked" : "";
+        const isRequired = idx === 0 ? "required" : "";
+        return `
+          <label class="radio-option" for="${optionId}">
+            <input id="${optionId}" name="${key}" type="radio" value="${optionValue}" ${isChecked} ${isRequired} />
+            <span>${opt.label}</span>
+          </label>
+        `;
+      })
+      .join("");
+
+    return `
+      <fieldset class="field field-radio">
+        <legend>${label}</legend>
+        <div class="radio-group" role="radiogroup" aria-label="${label}">
+          ${radiosHtml}
+        </div>
+      </fieldset>
+    `;
+  }
+
   const minAttr = min !== undefined ? `min="${min}"` : "";
   const maxAttr = max !== undefined ? `max="${max}"` : "";
   return `
@@ -114,6 +174,12 @@ function readNumberInput(id) {
 function collectBaselineInputs() {
   const out = {};
   BASELINE_FIELDS.forEach((f) => {
+    if (f.type === "binary-radio") {
+      const selected = document.querySelector(`input[name="${f.key}"]:checked`);
+      if (!selected) throw new Error(`Select an option for ${f.label}.`);
+      out[f.key] = Number(selected.value);
+      return;
+    }
     out[f.key] = readNumberInput(f.key);
   });
   return out;
