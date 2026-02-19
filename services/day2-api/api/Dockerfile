@@ -20,6 +20,7 @@ WORKDIR /app
 COPY services/day2-api/api/plumber.R /app/plumber.R
 COPY services/day2-api/api/R /app/R
 COPY services/day2-api/api/models /app/models
+COPY ["strata prevalence adjustment/prevalence_all_nested.rds", "/app/prevalence/prevalence_all_nested.rds"]
 
 EXPOSE 8000
 
