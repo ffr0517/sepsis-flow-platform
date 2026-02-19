@@ -14,8 +14,9 @@ services:
       - key: CORS_ALLOW_ORIGINS
         sync: false
 
-  - type: static
+  - type: web
     name: sepsis-flow-web-app
+    runtime: static
     rootDir: services/web-app
     staticPublishPath: .
     pullRequestPreviewsEnabled: false
