@@ -18,7 +18,7 @@ suppressPackageStartupMessages({
 # LEVEL1_TREATMENTS_D1_SAFE_0 .. LEVEL5_TREATMENTS_D1_SAFE_0:
 # binary Day-1 treatment outputs used as Day-2 predictors.
 
-base_url <- Sys.getenv("SEPSIS_FLOW_API_URL", unset = "https://sepsis-flow-d2-api.onrender.com")
+base_url <- Sys.getenv("SEPSIS_FLOW_API_URL", unset = "https://sepsis-flow-platform.onrender.com")
 
 # 1) Health request
 health_resp <- httr2::request(paste0(base_url, "/health")) |>

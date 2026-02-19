@@ -18,7 +18,7 @@ suppressPackageStartupMessages({
 # LEVEL1_TREATMENTS_D1_SAFE_0 .. LEVEL5_TREATMENTS_D1_SAFE_0:
 # binary Day-1 treatment outputs used as Day-2 predictors.
 
-BASE_URL <- Sys.getenv("SEPSIS_FLOW_API_URL", unset = "https://sepsis-flow-d2-api.onrender.com")
+BASE_URL <- Sys.getenv("SEPSIS_FLOW_API_URL", unset = "https://sepsis-flow-platform.onrender.com")
 
 required_fields <- c(
   "age.months", "sex", "adm.recent", "wfaz", "cidysymp",
@@ -46,8 +46,7 @@ predict_single_patient <- function(
     LEVEL4_TREATMENTS_D1_SAFE_0,
     LEVEL5_TREATMENTS_D1_SAFE_0,
     levels = c("L1", "L2", "L3", "L4", "L5"),
-    base_url = BASE_URL
-) {
+    base_url = BASE_URL) {
   patient <- list(
     age.months = age.months,
     sex = sex,
