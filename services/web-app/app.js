@@ -1,6 +1,6 @@
 const ORCHESTRATOR_API_BASE_URL = "https://sepsis-flow-orchestrator.onrender.com";
-const STARTUP_WARMUP_MAX_ATTEMPTS = 2;
-const STARTUP_WARMUP_RETRY_DELAY_MS = 4000;
+const STARTUP_WARMUP_MAX_ATTEMPTS = 1;
+const STARTUP_WARMUP_RETRY_DELAY_MS = 2000;
 
 const BASELINE_FIELDS = [
   { key: "age.months", label: "Age (months)", type: "number", step: "1" },
@@ -479,7 +479,7 @@ async function runStartupWarmup() {
   byId("retryWarmupBtn").disabled = true;
   setStatus("loading", "Loading: API endpoints");
   setWarmupUi({
-    text: "Checking Day 1 and Day 2 APIs. This may take a few minutes",
+    text: "Checking Day 1 and Day 2 APIs. Cold starts can take up to about a minute.",
     chipLabel: "Warming Up",
     chipClass: "chip-warn"
   });

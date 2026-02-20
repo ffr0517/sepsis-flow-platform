@@ -10,17 +10,17 @@ services:
       - key: DAY2_API_BASE_URL
         value: https://sepsis-flow-platform.onrender.com
       - key: REQUEST_TIMEOUT_SECONDS
-        value: 120
+        value: 45
       - key: WARMUP_TIMEOUT_SECONDS
-        value: 180
+        value: 60
       - key: WARMUP_POLL_SECONDS
-        value: 3
-      - key: WARMUP_REQUEST_TIMEOUT_SECONDS
-        value: 90
-      - key: DOWNSTREAM_RETRY_ATTEMPTS
-        value: 3
-      - key: DOWNSTREAM_RETRY_DELAY_SECONDS
         value: 2
+      - key: WARMUP_REQUEST_TIMEOUT_SECONDS
+        value: 10
+      - key: DOWNSTREAM_RETRY_ATTEMPTS
+        value: 2
+      - key: DOWNSTREAM_RETRY_DELAY_SECONDS
+        value: 1
       - key: CORS_ALLOW_ORIGINS
         sync: false
 

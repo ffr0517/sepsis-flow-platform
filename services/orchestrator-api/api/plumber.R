@@ -31,14 +31,14 @@ source(file.path(api_dir, "R", "flow.R"))
 day1_api_base_url <- Sys.getenv("DAY1_API_BASE_URL", unset = "https://sepsis-flow-d1-api.onrender.com")
 day2_api_base_url <- Sys.getenv("DAY2_API_BASE_URL", unset = "https://sepsis-flow-platform.onrender.com")
 request_timeout_seconds <- as.numeric(Sys.getenv("REQUEST_TIMEOUT_SECONDS", unset = "20"))
-warmup_timeout_seconds <- as.numeric(Sys.getenv("WARMUP_TIMEOUT_SECONDS", unset = "180"))
+warmup_timeout_seconds <- as.numeric(Sys.getenv("WARMUP_TIMEOUT_SECONDS", unset = "90"))
 warmup_poll_seconds <- as.numeric(Sys.getenv("WARMUP_POLL_SECONDS", unset = "3"))
 warmup_request_timeout_seconds <- as.numeric(Sys.getenv(
   "WARMUP_REQUEST_TIMEOUT_SECONDS",
-  unset = as.character(min(warmup_timeout_seconds, max(45, request_timeout_seconds)))
+  unset = as.character(min(warmup_timeout_seconds, max(10, request_timeout_seconds)))
 ))
 if (!is.finite(warmup_request_timeout_seconds) || warmup_request_timeout_seconds <= 0) {
-  warmup_request_timeout_seconds <- min(warmup_timeout_seconds, max(45, request_timeout_seconds))
+  warmup_request_timeout_seconds <- min(warmup_timeout_seconds, max(10, request_timeout_seconds))
 }
 warmup_request_timeout_seconds <- min(warmup_request_timeout_seconds, warmup_timeout_seconds)
 downstream_retry_attempts <- as.integer(Sys.getenv("DOWNSTREAM_RETRY_ATTEMPTS", unset = "3"))
@@ -108,19 +108,17 @@ function(res) {
   started <- Sys.time()
   trace <- new_trace("/warmup")
 
-  day1 <- wait_for_downstream_ready(
-    base_url = day1_api_base_url,
+  warm <- wait_for_multiple_downstreams_ready(
+    base_urls = list(
+      day1 = day1_api_base_url,
+      day2 = day2_api_base_url
+    ),
     timeout_sec = warmup_timeout_seconds,
     poll_every_sec = warmup_poll_seconds,
     per_request_timeout_sec = warmup_request_timeout_seconds
   )
-
-  day2 <- wait_for_downstream_ready(
-    base_url = day2_api_base_url,
-    timeout_sec = warmup_timeout_seconds,
-    poll_every_sec = warmup_poll_seconds,
-    per_request_timeout_sec = warmup_request_timeout_seconds
-  )
+  day1 <- warm$day1
+  day2 <- warm$day2
 
   if (!isTRUE(day1$ok) || !isTRUE(day2$ok)) {
     res$status <- 502

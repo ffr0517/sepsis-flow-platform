@@ -250,6 +250,53 @@ wait_for_downstream_ready <- function(base_url, timeout_sec = 90, poll_every_sec
   }
 }
 
+wait_for_multiple_downstreams_ready <- function(base_urls, timeout_sec = 90, poll_every_sec = 3, per_request_timeout_sec = 8) {
+  urls <- as.list(base_urls)
+  if (length(urls) == 0) return(list())
+
+  if (is.null(names(urls))) {
+    names(urls) <- paste0("target_", seq_along(urls))
+  }
+
+  state <- lapply(urls, function(x) list(
+    ok = FALSE,
+    attempts = 0L,
+    last = list(ok = FALSE, status = NA_integer_, error = "No attempts made.")
+  ))
+
+  started <- Sys.time()
+
+  repeat {
+    for (nm in names(urls)) {
+      if (isTRUE(state[[nm]]$ok)) next
+      state[[nm]]$attempts <- state[[nm]]$attempts + 1L
+      health <- call_health(urls[[nm]], timeout_sec = per_request_timeout_sec)
+      state[[nm]]$last <- health
+      if (isTRUE(health$ok)) state[[nm]]$ok <- TRUE
+    }
+
+    if (all(vapply(state, function(x) isTRUE(x$ok), logical(1)))) {
+      return(lapply(state, function(x) {
+        list(ok = TRUE, attempts = x$attempts, last = x$last)
+      }))
+    }
+
+    elapsed <- as.numeric(difftime(Sys.time(), started, units = "secs"))
+    if (elapsed >= timeout_sec) {
+      return(lapply(state, function(x) {
+        list(
+          ok = isTRUE(x$ok),
+          attempts = x$attempts,
+          last = x$last,
+          elapsed_seconds = round(elapsed, 2)
+        )
+      }))
+    }
+
+    Sys.sleep(poll_every_sec)
+  }
+}
+
 is_retryable_downstream_failure <- function(resp) {
   if (isTRUE(resp$ok)) return(FALSE)
   if (is.na(resp$status)) return(TRUE)
