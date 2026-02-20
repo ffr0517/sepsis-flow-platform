@@ -1,4 +1,6 @@
 const ORCHESTRATOR_API_BASE_URL = "https://sepsis-flow-orchestrator.onrender.com";
+const STARTUP_WARMUP_MAX_ATTEMPTS = 2;
+const STARTUP_WARMUP_RETRY_DELAY_MS = 4000;
 
 const BASELINE_FIELDS = [
   { key: "age.months", label: "Age (months)", type: "number", step: "1" },
@@ -69,6 +71,7 @@ const state = {
 };
 
 const byId = (id) => document.getElementById(id);
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function makeFieldHtml({ key, label, type = "number", step = "any", min, max, options = [] }, value = "") {
   if (type === "binary-radio") {
@@ -482,7 +485,28 @@ async function runStartupWarmup() {
   });
 
   try {
-    await postJson(`${ORCHESTRATOR_API_BASE_URL}/warmup`, {});
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= STARTUP_WARMUP_MAX_ATTEMPTS; attempt += 1) {
+      try {
+        await postJson(`${ORCHESTRATOR_API_BASE_URL}/warmup`, {});
+        lastError = null;
+        break;
+      } catch (err) {
+        lastError = err;
+        if (attempt < STARTUP_WARMUP_MAX_ATTEMPTS) {
+          setWarmupUi({
+            text: `Startup check attempt ${attempt} failed while waking APIs. Retrying...`,
+            chipLabel: "Retrying",
+            chipClass: "chip-warn"
+          });
+          await sleep(STARTUP_WARMUP_RETRY_DELAY_MS);
+        }
+      }
+    }
+
+    if (lastError) throw lastError;
+
     state.startupReady = true;
     setInteractionLocked(false);
     setStatus("neutral", "Ready to run Day 1 prediction.");

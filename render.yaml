@@ -12,11 +12,11 @@ services:
       - key: REQUEST_TIMEOUT_SECONDS
         value: 120
       - key: WARMUP_TIMEOUT_SECONDS
-        value: 90
+        value: 180
       - key: WARMUP_POLL_SECONDS
         value: 3
       - key: WARMUP_REQUEST_TIMEOUT_SECONDS
-        value: 60
+        value: 90
       - key: DOWNSTREAM_RETRY_ATTEMPTS
         value: 3
       - key: DOWNSTREAM_RETRY_DELAY_SECONDS
