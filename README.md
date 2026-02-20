@@ -5,7 +5,7 @@
 [Day 2 API Service](./services/day2-api)
 [Web App](./services/web-app)
 
-# Sepsis Flow Platform Repository
+# Sepsis Flow Platform Repository [STAGING]
 
 The Sepsis Flow platform is a research-focused multi-service system for two-day pediatric treatment-intensity prediction.
 This repository contains the Day 1 and Day 2 prediction APIs (R + Plumber), an orchestration API, a static web app, and evaluation tooling.
