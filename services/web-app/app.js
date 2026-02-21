@@ -22,18 +22,18 @@ const BASELINE_FIELDS = [
       { label: "No", value: 0 }
     ]
   },
-  { key: "wfaz", label: "WFA Z-Score", type: "number", step: "0.01" },
+  { key: "wfaz", label: "Weight-For-Age Z-Score", type: "number", step: "0.01" },
   { key: "cidysymp", label: "Illness Duration (days)", type: "number", step: "1" },
   {
     key: "not.alert",
-    label: "Not alert (AVPU < A)",
+    label: "Not alert (AVPU < A) THIS WORDING CONFUSED ME WHEN CODING 1 OR 0 LOL",
     type: "binary-radio",
     options: [
       { label: "Yes", value: 1 },
       { label: "No", value: 0 }
     ]
   },
-  { key: "hr.all", label: "MONKEY Rate", type: "number", step: "0.1" },
+  { key: "hr.all", label: "Heart Rate", type: "number", step: "0.1" },
   { key: "rr.all", label: "Respiratory Rate", type: "number", step: "0.1" },
   { key: "envhtemp", label: "Temperature (C)", type: "number", step: "0.1" },
   {
@@ -73,33 +73,43 @@ const state = {
 const byId = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function makeFieldHtml({ key, label, type = "number", step = "any", min, max, options = [] }, value = "") {
-  if (type === "binary-radio") {
-    const selected = Number(value);
-    const radioOptions = options.length > 0 ? options : [{ label: "Yes", value: 1 }, { label: "No", value: 0 }];
-    const radiosHtml = radioOptions
-      .map((opt, idx) => {
-        const optionValue = Number(opt.value);
-        const optionId = `${key}-${optionValue}`;
-        const isChecked = selected === optionValue ? "checked" : "";
-        const isRequired = idx === 0 ? "required" : "";
-        return `
-          <label class="radio-option" for="${optionId}">
-            <input id="${optionId}" name="${key}" type="radio" value="${optionValue}" ${isChecked} ${isRequired} />
-            <span>${opt.label}</span>
-          </label>
-        `;
-      })
-      .join("");
-
+//need to be careful about the left/right values being 1 and 0 and making sure 
+// that they are coded correctly with how we choose to word each prompt
+// and in line with what your model actually expects.
+// ie please double check that these are directionally correct
+// thanks twin xx
+function makeFieldHtml({ key, label, type = "number", step = "any", min, max }, value = "") {
+  const renderBinaryPills = (keyName, leftText, rightText, val) => {
+    const leftChecked = String(val) === "1" ? "checked" : "";
+    const rightChecked = String(val) === "0" ? "checked" : "";
     return `
-      <fieldset class="field field-radio">
-        <legend>${label}</legend>
-        <div class="radio-group" role="radiogroup" aria-label="${label}">
-          ${radiosHtml}
+      <div class="field">
+        <label id="${keyName}-label">${label}</label>
+        <div class="pill-group" role="radiogroup" aria-labelledby="${keyName}-label">
+          <input type="radio" id="${keyName}-left" name="${keyName}" value="1" ${leftChecked} required />
+          <label for="${keyName}-left" class="pill">${leftText}</label>
+
+          <input type="radio" id="${keyName}-right" name="${keyName}" value="0" ${rightChecked} />
+          <label for="${keyName}-right" class="pill">${rightText}</label>
         </div>
-      </fieldset>
+      </div>
     `;
+  };
+
+  if (key === "sex") {
+    return renderBinaryPills(key, "Male", "Female", value);
+  }
+
+  if (key === "adm.recent") {
+    return renderBinaryPills(key, "Yes", "No", value);
+  }
+
+  if (key === "not.alert") {
+    return renderBinaryPills(key, "Yes", "No", value);
+  }
+  
+  if (key === "crt.long") {
+    return renderBinaryPills(key, "Yes", "No", value);
   }
 
   const minAttr = min !== undefined ? `min="${min}"` : "";
@@ -169,10 +179,29 @@ function setInteractionLocked(locked) {
 }
 
 function readNumberInput(id) {
-  const raw = byId(id).value;
-  const n = Number(raw);
-  if (!Number.isFinite(n)) throw new Error(`Invalid numeric value for ${id}.`);
-  return n;
+  const el = byId(id);
+  if (el) {
+    if ("value" in el && el.type !== "radio") {
+      const raw = el.value;
+      const n = Number(raw);
+      if (!Number.isFinite(n)) throw new Error(`Invalid numeric value for ${id}.`);
+      return n;
+    }
+  }
+
+  const radios = document.getElementsByName(id);
+  if (radios && radios.length > 0) {
+    for (let i = 0; i < radios.length; i++) {
+      if (radios[i].checked) {
+        const n = Number(radios[i].value);
+        if (!Number.isFinite(n)) throw new Error(`Invalid numeric value for ${id}.`);
+        return n;
+      }
+    }
+    throw new Error(`Invalid numeric value for ${id} (no option selected).`);
+  }
+
+  throw new Error(`Missing input element for ${id}.`);
 }
 
 function collectBaselineInputs() {
