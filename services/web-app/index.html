@@ -53,12 +53,15 @@
           This default averaged probability shown by the model is an evidence score from a balanced 50/50 training
           world: it answers “if cases and non-cases were equally likely, do this child’s features look more like a case
           or a non-case?” and is useful for comparing patients,
-          but it is not an absolute real-world risk. If you add country and inpatient/outpatient information,
+          but it is not an absolute real-world risk.</p> 
+          
+          <p class="hint">If you add country and inpatient/outpatient information,
           the app converts that evidence score into a calibrated risk by adjusting to the baseline treatment prevalence
           in the relevant context and updating the alert threshold accordingly;
           the calibrated value can be interpreted as the estimated probability of receiving that treatment level in this
-          setting.
-          On test data, providing both country and inpatient/outpatient made predictions more precise:
+          setting.</p>
+
+          <p class="hint">On test data, providing both country and inpatient/outpatient made predictions more precise:
           PPV increased from +0.7 to +5.4 percentage points (largest gains for Day 1 Non-bolused IV fluids:
           41.9% to 47.3% and Day 2 Non-bolused IV fluids: 25.0% → 27.9%) and risk enrichment improved by +0.2 to +1.4x
           (largest for Day 2 Mechanical ventilation,
