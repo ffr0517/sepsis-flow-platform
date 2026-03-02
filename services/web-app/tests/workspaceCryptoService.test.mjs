@@ -16,17 +16,6 @@ function makeMockDataAccess() {
     async deleteAppSetting(key) {
       settings.delete(key);
     },
-    async countUnencryptedRecords() {
-      return { patients: 0, assessments: 0 };
-    },
-    async listLegacyPlaintextPatients() {
-      return [];
-    },
-    async listLegacyPlaintextAssessments() {
-      return [];
-    },
-    async updatePatient() {},
-    async upsertAssessment() {},
     async resetWorkspaceEncryptedData() {}
   };
 }
@@ -37,8 +26,7 @@ function resetCryptoStore() {
     workspaceId: null,
     key: null,
     meta: null,
-    lastError: null,
-    migrationProgress: null
+    lastError: null
   });
 }
 

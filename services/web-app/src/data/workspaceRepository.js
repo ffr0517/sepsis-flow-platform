@@ -574,54 +574,6 @@ export function createWorkspaceRepository(
       if (error) throw mapError(error, "Failed to delete workspace setting.");
     },
 
-    async countUnencryptedRecords() {
-      const { supabase, workspaceId } = await getContext();
-      const [patientsCountResult, assessmentsCountResult] = await Promise.all([
-        supabase
-          .from("patients")
-          .select("id", { count: "exact", head: true })
-          .eq("workspace_id", workspaceId)
-          .is("secure_payload", null),
-        supabase
-          .from("assessments")
-          .select("id", { count: "exact", head: true })
-          .eq("workspace_id", workspaceId)
-          .is("secure_payload", null)
-      ]);
-
-      if (patientsCountResult.error) throw mapError(patientsCountResult.error, "Failed to count patient migration rows.");
-      if (assessmentsCountResult.error) throw mapError(assessmentsCountResult.error, "Failed to count assessment migration rows.");
-
-      return {
-        patients: patientsCountResult.count || 0,
-        assessments: assessmentsCountResult.count || 0
-      };
-    },
-
-    async listLegacyPlaintextPatients() {
-      const { supabase, workspaceId } = await getContext();
-      const { data, error } = await supabase
-        .from("patients")
-        .select("*")
-        .eq("workspace_id", workspaceId)
-        .is("secure_payload", null)
-        .order("created_at", { ascending: true });
-      if (error) throw mapError(error, "Failed to load legacy plaintext patients.");
-      return (data || []).map(mapPatientRow);
-    },
-
-    async listLegacyPlaintextAssessments() {
-      const { supabase, workspaceId } = await getContext();
-      const { data, error } = await supabase
-        .from("assessments")
-        .select("*")
-        .eq("workspace_id", workspaceId)
-        .is("secure_payload", null)
-        .order("created_at", { ascending: true });
-      if (error) throw mapError(error, "Failed to load legacy plaintext assessments.");
-      return (data || []).map(mapAssessmentRow);
-    },
-
     async resetWorkspaceEncryptedData() {
       const { supabase, workspaceId } = await getContext();
       const role = getWorkspaceRole?.();

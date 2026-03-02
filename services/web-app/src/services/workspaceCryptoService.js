@@ -9,14 +9,12 @@ import {
   cryptoStore,
   setCryptoError,
   setCryptoLocked,
-  setCryptoMigrating,
   setCryptoSetupRequired,
   setCryptoUnlocked,
   setCryptoUnlocking
 } from "../state/cryptoStore.js";
 
 const CRYPTO_META_KEY = "workspace_crypto_meta";
-const CRYPTO_MIGRATED_KEY = "workspace_crypto_migrated_at";
 
 function safeTrim(value) {
   return String(value || "").trim();
@@ -162,85 +160,11 @@ export function createWorkspaceCryptoService({
     };
   }
 
-  async function countUnencryptedRecords() {
-    if (!isEnabled() || getAuthState?.()?.mode !== "authenticated") {
-      return { patients: 0, assessments: 0, total: 0 };
-    }
-    const counts = await dataAccess.countUnencryptedRecords();
-    return {
-      ...counts,
-      total: Number(counts.patients || 0) + Number(counts.assessments || 0)
-    };
-  }
-
-  async function markMigrationComplete() {
-    await dataAccess.upsertAppSetting(CRYPTO_MIGRATED_KEY, {
-      completed_at: new Date().toISOString()
-    });
-  }
-
-  async function hasMigrationMarker() {
-    if (!isEnabled() || getAuthState?.()?.mode !== "authenticated") return false;
-    const marker = await dataAccess.getAppSetting(CRYPTO_MIGRATED_KEY);
-    return Boolean(marker);
-  }
-
-  async function migratePlaintextRecords({ onProgress } = {}) {
-    requireAuthWorkspace();
-    if (cryptoStore.getState().state !== "unlocked") {
-      throw new Error("Unlock workspace before migration.");
-    }
-
-    const legacyPatients = await dataAccess.listLegacyPlaintextPatients();
-    const legacyAssessments = await dataAccess.listLegacyPlaintextAssessments();
-    const total = legacyPatients.length + legacyAssessments.length;
-    let done = 0;
-
-    setCryptoMigrating({ done, total, phase: "patients" });
-    for (const patient of legacyPatients) {
-      await dataAccess.updatePatient(patient.id, {
-        alias: patient.alias,
-        externalId: patient.externalId,
-        country: patient.country,
-        inpatientStatus: patient.inpatientStatus,
-        ageMonths: patient.ageMonths,
-        sex: patient.sex,
-        weightValue: patient.weightValue,
-        weightUnit: patient.weightUnit
-      });
-      done += 1;
-      const progress = { done, total, phase: "patients" };
-      setCryptoMigrating(progress);
-      onProgress?.(progress);
-    }
-
-    for (const assessment of legacyAssessments) {
-      await dataAccess.upsertAssessment({
-        ...assessment,
-        id: assessment.id,
-        createdAt: assessment.createdAt
-      });
-      done += 1;
-      const progress = { done, total, phase: "assessments" };
-      setCryptoMigrating(progress);
-      onProgress?.(progress);
-    }
-
-    await markMigrationComplete();
-    setCryptoUnlocked({
-      workspaceId: currentWorkspaceId(),
-      key: cryptoStore.getState().key,
-      meta: cryptoStore.getState().meta
-    });
-    return { migratedPatients: legacyPatients.length, migratedAssessments: legacyAssessments.length };
-  }
-
   async function resetWorkspaceEncryptedData() {
     const { role, workspaceId } = requireAuthWorkspace();
     if (role !== "owner") throw new Error("Only workspace owners can reset workspace encrypted data.");
     await dataAccess.resetWorkspaceEncryptedData();
     await dataAccess.deleteAppSetting(CRYPTO_META_KEY);
-    await dataAccess.deleteAppSetting(CRYPTO_MIGRATED_KEY);
     setCryptoSetupRequired(workspaceId);
   }
 
@@ -251,11 +175,8 @@ export function createWorkspaceCryptoService({
     unlockWorkspace,
     lockWorkspace,
     getCryptoContext,
-    countUnencryptedRecords,
-    hasMigrationMarker,
-    migratePlaintextRecords,
     resetWorkspaceEncryptedData
   };
 }
 
-export { CRYPTO_META_KEY, CRYPTO_MIGRATED_KEY };
+export { CRYPTO_META_KEY };

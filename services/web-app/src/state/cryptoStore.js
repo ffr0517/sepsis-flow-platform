@@ -1,7 +1,7 @@
 import { createStore } from "./createStore.js";
 
 /**
- * @typedef {'locked'|'unlocking'|'unlocked'|'setup_required'|'migrating'|'error'} WorkspaceCryptoState
+ * @typedef {'locked'|'unlocking'|'unlocked'|'setup_required'|'error'} WorkspaceCryptoState
  */
 
 export const cryptoStore = createStore({
@@ -9,8 +9,7 @@ export const cryptoStore = createStore({
   workspaceId: null,
   key: null,
   meta: null,
-  lastError: null,
-  migrationProgress: null
+  lastError: null
 });
 
 export function setCryptoLocked(workspaceId = null, meta = null) {
@@ -19,8 +18,7 @@ export function setCryptoLocked(workspaceId = null, meta = null) {
     workspaceId,
     key: null,
     meta: meta || null,
-    lastError: null,
-    migrationProgress: null
+    lastError: null
   });
 }
 
@@ -30,8 +28,7 @@ export function setCryptoSetupRequired(workspaceId = null) {
     workspaceId,
     key: null,
     meta: null,
-    lastError: null,
-    migrationProgress: null
+    lastError: null
   });
 }
 
@@ -50,15 +47,7 @@ export function setCryptoUnlocked({ workspaceId, key, meta }) {
     workspaceId,
     key,
     meta: meta || null,
-    lastError: null,
-    migrationProgress: null
-  });
-}
-
-export function setCryptoMigrating(progress = null) {
-  cryptoStore.patch({
-    state: "migrating",
-    migrationProgress: progress
+    lastError: null
   });
 }
 
@@ -66,7 +55,6 @@ export function setCryptoError(message) {
   cryptoStore.patch({
     state: "error",
     key: null,
-    lastError: String(message || "Workspace encryption error."),
-    migrationProgress: null
+    lastError: String(message || "Workspace encryption error.")
   });
 }

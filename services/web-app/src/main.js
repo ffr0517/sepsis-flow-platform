@@ -46,7 +46,6 @@ const uiState = {
   connectionGateVisible: true,
   workspaceCryptoPromptVisible: false,
   workspaceCryptoPromptMode: "unlock",
-  workspaceCryptoMigrationCounts: null,
   guestImportPromptVisible: false,
   guestImportResult: null,
   supportExportRedactExternalIds: false,
@@ -1190,45 +1189,16 @@ function renderWorkspaceCryptoModal() {
   const body = byId("workspaceCryptoModalBody");
   const setupForm = byId("workspaceCryptoSetupForm");
   const unlockForm = byId("workspaceCryptoUnlockForm");
-  const migrateBox = byId("workspaceCryptoMigrateActions");
-  const migrateProgress = byId("workspaceCryptoMigrateProgress");
   const error = byId("workspaceCryptoErrorText");
 
   if (error) error.textContent = crypto.lastError || "";
   if (setupForm) setupForm.classList.add("hidden");
   if (unlockForm) unlockForm.classList.add("hidden");
-  if (migrateBox) migrateBox.classList.add("hidden");
-  if (migrateProgress) migrateProgress.textContent = "";
 
   if (crypto.state === "setup_required") {
     if (title) title.textContent = "Set Workspace Passphrase";
     if (body) body.textContent = "Create a workspace passphrase. This passphrase is required each sign-in to unlock encrypted workspace data.";
     if (setupForm) setupForm.classList.remove("hidden");
-    return;
-  }
-
-  if (crypto.state === "migrating") {
-    if (title) title.textContent = "Migrating Existing Workspace Data";
-    if (body) body.textContent = "Encrypting existing plaintext records. Keep this tab open.";
-    const progress = crypto.migrationProgress;
-    if (migrateProgress) {
-      if (progress?.total > 0) {
-        migrateProgress.textContent = `Progress: ${progress.done}/${progress.total}`;
-      } else {
-        migrateProgress.textContent = "Preparing migration...";
-      }
-    }
-    return;
-  }
-
-  if (uiState.workspaceCryptoPromptMode === "migrate") {
-    if (title) title.textContent = "Encrypt Existing Workspace Data";
-    if (body) body.textContent = "Legacy plaintext workspace rows were found. Migrate now to enforce zero-knowledge storage.";
-    if (migrateBox) migrateBox.classList.remove("hidden");
-    if (migrateProgress && uiState.workspaceCryptoMigrationCounts) {
-      const c = uiState.workspaceCryptoMigrationCounts;
-      migrateProgress.textContent = `Pending migration: ${c.patients} patient rows, ${c.assessments} assessment rows.`;
-    }
     return;
   }
 
@@ -1620,12 +1590,6 @@ function renderShell() {
           <input name="passphrase" type="password" required placeholder="Workspace passphrase" />
           <button class="btn btn-primary" type="submit">Unlock workspace</button>
         </form>
-
-        <div id="workspaceCryptoMigrateActions" class="actions-row hidden">
-          <button id="runWorkspaceMigrationBtn" class="btn btn-primary" type="button">Migrate now</button>
-          <button id="signOutForMigrationBtn" class="btn btn-danger" type="button">Sign out</button>
-        </div>
-        <p id="workspaceCryptoMigrateProgress" class="muted small"></p>
       </div>
     </div>
   `;
@@ -1694,7 +1658,6 @@ async function ensureWorkspaceCryptoPromptState() {
     workspaceCryptoService.lockWorkspace();
     uiState.workspaceCryptoPromptVisible = false;
     uiState.workspaceCryptoPromptMode = "unlock";
-    uiState.workspaceCryptoMigrationCounts = null;
     renderWorkspaceCryptoModal();
     return;
   }
@@ -1712,60 +1675,17 @@ async function ensureWorkspaceCryptoPromptState() {
   });
   uiState.workspaceCryptoPromptVisible = true;
   uiState.workspaceCryptoPromptMode = info.requiresSetup ? "setup" : "unlock";
-  uiState.workspaceCryptoMigrationCounts = null;
   renderWorkspaceCryptoModal();
-}
-
-async function maybePromptWorkspaceMigration() {
-  if (!requiresWorkspaceUnlock() || !isWorkspaceUnlocked()) return false;
-  const counts = await workspaceCryptoService.countUnencryptedRecords();
-  if (!counts.total) {
-    return false;
-  }
-
-  uiState.workspaceCryptoPromptVisible = true;
-  uiState.workspaceCryptoPromptMode = "migrate";
-  uiState.workspaceCryptoMigrationCounts = counts;
-  renderWorkspaceCryptoModal();
-  return true;
 }
 
 async function completeWorkspaceUnlockFlow() {
   uiState.workspaceCryptoPromptVisible = false;
   uiState.workspaceCryptoPromptMode = "unlock";
-  uiState.workspaceCryptoMigrationCounts = null;
   renderWorkspaceCryptoModal();
-
-  const migrationPrompted = await maybePromptWorkspaceMigration();
-  if (migrationPrompted) return;
 
   await refreshPatients();
   await loadWorkspaceMeta();
   await maybePromptGuestImport();
-}
-
-async function runWorkspaceMigrationNow() {
-  ensureWorkspaceUnlocked();
-  uiState.workspaceCryptoPromptVisible = true;
-  renderWorkspaceCryptoModal();
-
-  try {
-    await workspaceCryptoService.migratePlaintextRecords({
-      onProgress: () => {
-        renderWorkspaceCryptoModal();
-      }
-    });
-    uiState.workspaceCryptoPromptVisible = false;
-    uiState.workspaceCryptoPromptMode = "unlock";
-    uiState.workspaceCryptoMigrationCounts = null;
-    renderWorkspaceCryptoModal();
-    await refreshPatients();
-    await maybePromptGuestImport();
-    setStatus("Workspace data migration complete.");
-  } catch (error) {
-    setStatus(error?.message || "Workspace migration failed.");
-    renderWorkspaceCryptoModal();
-  }
 }
 
 async function runManualConnectionCheck({ closeGateOnReady = false } = {}) {
@@ -2033,7 +1953,6 @@ async function handleClick(event) {
     workspaceCryptoService.lockWorkspace();
     uiState.workspaceCryptoPromptVisible = false;
     uiState.workspaceCryptoPromptMode = "unlock";
-    uiState.workspaceCryptoMigrationCounts = null;
     renderWorkspaceCryptoModal();
     await authService.signOut();
     uiState.assessPatientId = null;
@@ -2049,7 +1968,6 @@ async function handleClick(event) {
     workspaceCryptoService.lockWorkspace();
     uiState.workspaceCryptoPromptVisible = false;
     uiState.workspaceCryptoPromptMode = "unlock";
-    uiState.workspaceCryptoMigrationCounts = null;
     renderWorkspaceCryptoModal();
     setGuestMode();
     uiState.assessPatientId = null;
@@ -2104,21 +2022,6 @@ async function handleClick(event) {
     return;
   }
 
-  if (target.id === "runWorkspaceMigrationBtn") {
-    await runWorkspaceMigrationNow();
-    return;
-  }
-
-  if (target.id === "signOutForMigrationBtn") {
-    await authService.signOut();
-    workspaceCryptoService.lockWorkspace();
-    uiState.workspaceCryptoPromptVisible = false;
-    renderWorkspaceCryptoModal();
-    await refreshPatients();
-    setStatus("Signed out.");
-    return;
-  }
-
   if (target.id === "resetEncryptedWorkspaceBtn") {
     const isOwner = workspaceStore.getState().membershipRole === "owner";
     if (!isOwner) {
@@ -2134,7 +2037,6 @@ async function handleClick(event) {
       await workspaceCryptoService.resetWorkspaceEncryptedData();
       uiState.workspaceCryptoPromptVisible = true;
       uiState.workspaceCryptoPromptMode = "setup";
-      uiState.workspaceCryptoMigrationCounts = null;
       selectAssessPatient(null);
       await refreshPatients();
       renderWorkspaceCryptoModal();
