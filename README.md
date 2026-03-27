@@ -1,15 +1,17 @@
-**Sepsis Flow Platform Repository Quick Links**
+# Sepsis Flow Platform
 
-[Model Build Repo](https://github.com/ffr0517/sepsis-flow-build)
-[Day 1 API Service](./services/day1-api)
-[Day 2 API Service](./services/day2-api)
-[Web App](./services/web-app)
+Research prototype for two-day pediatric treatment-intensity prediction. This repository contains the Day 1 and Day 2 R/Plumber APIs, an orchestration API, a hosted web app, and evaluation tooling for validation workflows.
 
-# Sepsis Flow Platform Repository
+> Warning
+> As of March 27, 2026, Sepsis Flow is unpublished and not yet peer reviewed. It is a research prototype only and must not be used for clinical deployment or patient-care decision-making.
 
-The Sepsis Flow platform is a research-focused multi-service system for two-day pediatric treatment-intensity prediction.
-This repository contains the Day 1 and Day 2 prediction APIs (R + Plumber), an orchestration API, a static web app, and evaluation tooling.
-It is packaged for evaluation and validation workflows and is not for clinical deployment.
+## Quick Links
+
+- [Live demo](https://sepsis-flow-web-app.onrender.com)
+- [Model build repo](https://github.com/ffr0517/sepsis-flow-build)
+- [Day 1 API service](./services/day1-api)
+- [Day 2 API service](./services/day2-api)
+- [Web app](./services/web-app)
 
 ---
 
